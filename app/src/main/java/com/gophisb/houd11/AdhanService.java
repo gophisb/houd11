@@ -1,5 +1,5 @@
 package com.gophisb.houd11;
-import android.app.*;import android.content.*;import android.media.*;import android.os.*;import androidx.core.app.NotificationCompat;
+import android.app.*;import android.content.*;import android.content.pm.ServiceInfo;import android.media.*;import android.os.*;import androidx.core.app.NotificationCompat;
 public class AdhanService extends Service{
  static final String ACTION_PLAY="com.gophisb.houd11.PLAY_NOW";static final String CHANNEL="houd11_adhan_v2";MediaPlayer p;
  @Override public void onCreate(){super.onCreate();NotificationManager n=getSystemService(NotificationManager.class);if(Build.VERSION.SDK_INT>=26){NotificationChannel c=new NotificationChannel(CHANNEL,"الأذان",NotificationManager.IMPORTANCE_HIGH);c.setDescription("تشغيل الأذان في وقت الصلاة");c.setSound(null,null);n.createNotificationChannel(c);}}
