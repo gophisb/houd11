@@ -1,0 +1,7 @@
+package com.gophisb.houd11;
+import android.Manifest;import android.app.*;import android.content.*;import android.net.Uri;import android.os.*;import android.provider.Settings;import android.webkit.*;import androidx.annotation.Nullable;import androidx.appcompat.app.AppCompatActivity;
+public class MainActivity extends AppCompatActivity{
+ private WebView w;
+ @Override public void onCreate(@Nullable Bundle b){super.onCreate(b);w=new WebView(this);setContentView(w);WebSettings s=w.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(true);s.setAllowFileAccess(true);s.setAllowContentAccess(false);s.setMediaPlaybackRequiresUserGesture(false);w.setWebViewClient(new WebViewClient());w.addJavascriptInterface(new Bridge(this),"Houd11Android");w.loadUrl("file:///android_asset/web/index.html");if(Build.VERSION.SDK_INT>=33)requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},1001);}
+ static final class Bridge{final Activity a;Bridge(Activity x){a=x;}@JavascriptInterface public void scheduleAdhan(String p,long t){AdhanReceiver.schedule(a,p,t);}@JavascriptInterface public void playAdhanNow(){Intent i=new Intent(a,AdhanService.class).setAction(AdhanService.ACTION_PLAY);if(Build.VERSION.SDK_INT>=26)a.startForegroundService(i);else a.startService(i);}@JavascriptInterface public void openExactAlarmSettings(){if(Build.VERSION.SDK_INT>=31)try{a.startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:"+a.getPackageName())));}catch(Exception ignored){}}}
+}

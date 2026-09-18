@@ -1,0 +1,9 @@
+package com.gophisb.houd11;
+import android.app.*;import android.content.*;import android.media.*;import android.os.*;import androidx.core.app.NotificationCompat;
+public class AdhanService extends Service{
+ static final String ACTION_PLAY="com.gophisb.houd11.PLAY_NOW";static final String CHANNEL="houd11_adhan_v2";MediaPlayer p;
+ @Override public void onCreate(){super.onCreate();NotificationManager n=getSystemService(NotificationManager.class);if(Build.VERSION.SDK_INT>=26){NotificationChannel c=new NotificationChannel(CHANNEL,"الأذان",NotificationManager.IMPORTANCE_HIGH);c.setDescription("تشغيل الأذان في وقت الصلاة");c.setSound(null,null);n.createNotificationChannel(c);}}
+ @Override public int onStartCommand(Intent i,int f,int id){Notification n=new NotificationCompat.Builder(this,CHANNEL).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("الرفيق").setContentText("حان وقت الصلاة — الأذان").setOngoing(true).setPriority(NotificationCompat.PRIORITY_HIGH).build();if(Build.VERSION.SDK_INT>=29)startForeground(11,n,ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);else startForeground(11,n);play();return START_NOT_STICKY;}
+ void play(){if(p!=null)try{p.release();}catch(Exception ignored){}p=MediaPlayer.create(this,R.raw.adhan);if(p==null){stopSelf();return;}p.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build());p.setOnCompletionListener(x->{x.release();p=null;stopForeground(STOP_FOREGROUND_REMOVE);stopSelf();});p.setOnErrorListener((x,w,e)->{try{x.release();}catch(Exception ignored){}p=null;stopSelf();return true;});p.start();}
+ @Override public void onDestroy(){if(p!=null)try{p.release();}catch(Exception ignored){}p=null;super.onDestroy();}@Override public IBinder onBind(Intent i){return null;}
+}

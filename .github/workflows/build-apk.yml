@@ -1,28 +1,21 @@
-name: Build APK
-
+name: Build Android
 on:
-  push:
-    branches: [main, master]
+  push: { branches: [main] }
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-      - uses: android-actions/setup-android@v3
-      - name: Build APK
-        working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g"
+        with: { java-version: "17", distribution: temurin }
+      - uses: gradle/actions/setup-gradle@v6
+        with: { gradle-version: "8.11" }
+      - name: Sync pinned Rafeeq source
+        run: bash scripts/sync-rafeeq-web.sh
+      - name: Build release APK
+        run: gradle :app:assembleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: android/app/build/outputs/apk/release/
+          name: houd11-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
