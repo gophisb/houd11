@@ -27,7 +27,11 @@ jobs:
       - name: Build release APK
         run: gradle :app:assembleRelease --no-daemon
 
+      - name: Locate APK
+        run: find app/build/outputs -type f -name "*.apk" -print
+
       - uses: actions/upload-artifact@v4
         with:
           name: houd11-rafeeq4-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/**/*.apk
+          if-no-files-found: error
