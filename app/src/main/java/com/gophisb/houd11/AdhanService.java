@@ -3,6 +3,7 @@ package com.gophisb.houd11;
 import android.app.*;
 import android.content.*;
 import android.content.pm.ServiceInfo;
+import android.content.res.AssetFileDescriptor;
 import android.media.*;
 import android.net.Uri;
 import android.os.*;
@@ -18,18 +19,12 @@ public class AdhanService extends Service {
     @Override public void onCreate() {
         super.onCreate();
         audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel ch = new NotificationChannel(
                 CHANNEL, "الأذان", NotificationManager.IMPORTANCE_HIGH);
             ch.setDescription("تشغيل الأذان في وقت الصلاة");
-            ch.setSound(
-                Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.adhan),
-                new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
+            ch.setSound(null, null);
             nm.createNotificationChannel(ch);
         }
     }
@@ -55,22 +50,21 @@ public class AdhanService extends Service {
 
     private void requestFocusAndPlay() {
         if (Build.VERSION.SDK_INT >= 26) {
-            AudioFocusRequest req = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+            focusRequest = new AudioFocusRequest.Builder(
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
                 .setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build())
                 .setAcceptsDelayedFocusGain(false)
                 .build();
-            focusRequest = req;
-            int r = audioManager.requestAudioFocus(req);
-            if (r != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            int result = audioManager.requestAudioFocus(focusRequest);
+            if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 play();
                 return;
             }
         } else {
-            audioManager.requestAudioFocus(
-                null, AudioManager.STREAM_ALARM,
+            audioManager.requestAudioFocus(null, AudioManager.STREAM_ALARM,
                 AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
         }
         play();
@@ -78,22 +72,24 @@ public class AdhanService extends Service {
 
     private void play() {
         releasePlayer();
-
         try {
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build());
+
             AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.adhan);
             if (afd == null) throw new IllegalStateException("adhan resource unavailable");
             try {
-                player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+                player.setDataSource(
+                    afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
             } finally {
                 afd.close();
             }
+
             player.setVolume(1.0f, 1.0f);
-            player.setOnPreparedListener(MediaPlayer::start);
+            player.setOnPreparedListener(mp -> mp.start());
             player.setOnCompletionListener(mp -> finishPlayback());
             player.setOnErrorListener((mp, what, extra) -> {
                 finishPlayback();
