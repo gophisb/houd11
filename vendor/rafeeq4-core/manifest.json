@@ -1,0 +1,21 @@
+{
+  "name": "الرفيق - رفيقك إلى الطمأنينة",
+  "short_name": "الرفيق",
+  "description": "تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0B1220",
+  "theme_color": "#0B1220",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
