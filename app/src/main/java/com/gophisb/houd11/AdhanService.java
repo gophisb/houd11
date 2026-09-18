@@ -5,7 +5,6 @@ import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetFileDescriptor;
 import android.media.*;
-import android.net.Uri;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
 
@@ -13,12 +12,9 @@ public class AdhanService extends Service {
     static final String ACTION_PLAY = "com.gophisb.houd11.PLAY_NOW";
     static final String CHANNEL = "houd11_adhan_v3";
     MediaPlayer player;
-    AudioManager audioManager;
-    AudioFocusRequest focusRequest;
 
     @Override public void onCreate() {
         super.onCreate();
-        audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (Build.VERSION.SDK_INT >= 26) {
             NotificationChannel ch = new NotificationChannel(
@@ -44,30 +40,8 @@ public class AdhanService extends Service {
             startForeground(11, n);
         }
 
-        requestFocusAndPlay();
-        return START_NOT_STICKY;
-    }
-
-    private void requestFocusAndPlay() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            focusRequest = new AudioFocusRequest.Builder(
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                .setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build())
-                .setAcceptsDelayedFocusGain(false)
-                .build();
-            int result = audioManager.requestAudioFocus(focusRequest);
-            if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                play();
-                return;
-            }
-        } else {
-            audioManager.requestAudioFocus(null, AudioManager.STREAM_ALARM,
-                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-        }
         play();
+        return START_NOT_STICKY;
     }
 
     private void play() {
@@ -75,7 +49,7 @@ public class AdhanService extends Service {
         try {
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build());
 
