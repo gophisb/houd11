@@ -1,9 +1,23 @@
 plugins { id "com.android.application" }
+
 android {
     namespace "com.gophisb.houd11"
     compileSdk 35
-    defaultConfig { applicationId "com.gophisb.houd11"; minSdk 23; targetSdk 35; versionCode 11; versionName "1.0.0" }
+
+    defaultConfig {
+        applicationId "com.gophisb.houd11"
+        minSdk 23
+        targetSdk 35
+        versionCode 11
+        versionName "1.0.0"
+    }
 }
+
+configurations.configureEach {
+    exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
+    exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"
+}
+
 dependencies {
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.webkit:webkit:1.13.0"
