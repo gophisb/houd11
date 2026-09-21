@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: temurin
-
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.11"
@@ -24,25 +22,34 @@ jobs:
       - name: Sync verified Ar-Rafeeq 4 web source
         run: bash scripts/sync-rafeeq-web.sh
 
-      - name: Download bundled Minshawy Quran audio
-        run: bash scripts/download-quran-audio.sh
+      - name: Patch Android offline recitation bridge
+        run: python3 scripts/patch-android-recitation.py
 
-      - name: Verify offline Quran payload
-        run: |
-          test "$(find app/src/main/assets/web/assets/audio/minshawy -type f -name '*.mp3' | wc -l)" -eq 6236
-          test "$(find app/src/main/assets/web/assets/audio/minshawy -type f -name '*.mp3' -size 0 | wc -l)" -eq 0
-          du -sh app/src/main/assets/web/assets/audio/minshawy
-
-      - name: Build release APK
+      - name: Build lightweight release APK
         run: gradle :app:assembleRelease --no-daemon
 
-      - name: Verify APK exists
+      - name: Verify lightweight APK
         run: |
           find app/build/outputs -type f -name "*.apk" -print
           test -n "$(find app/build/outputs -type f -name '*.apk' -print -quit)"
+          size=$(stat -c%s "$(find app/build/outputs -type f -name '*.apk' -print -quit)")
+          echo "APK_BYTES=$size"
+          test "$size" -lt 120000000
+
+      - name: Build optional Quran audio pack
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          bash scripts/download-quran-audio.sh
 
       - uses: actions/upload-artifact@v4
         with:
-          name: houd11-rafeeq4-offline-release-apk
+          name: houd11-rafeeq4-lightweight-release-apk
           path: app/build/outputs/**/*.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: houd11-quran-audio-pack
+          path: dist/quran-audio-pack.zip
           if-no-files-found: error
