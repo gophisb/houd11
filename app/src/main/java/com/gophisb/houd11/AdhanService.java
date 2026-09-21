@@ -85,20 +85,12 @@ public class AdhanService extends Service {
 
     private void finishPlayback() {
         releasePlayer();
-        if (Build.VERSION.SDK_INT >= 26 && audioManager != null && focusRequest != null) {
-            try { audioManager.abandonAudioFocusRequest(focusRequest); } catch (Exception ignored) {}
-        } else if (audioManager != null) {
-            try { audioManager.abandonAudioFocus(null); } catch (Exception ignored) {}
-        }
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }
 
     @Override public void onDestroy() {
         releasePlayer();
-        if (Build.VERSION.SDK_INT >= 26 && audioManager != null && focusRequest != null) {
-            try { audioManager.abandonAudioFocusRequest(focusRequest); } catch (Exception ignored) {}
-        }
         super.onDestroy();
     }
 
