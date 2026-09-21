@@ -22,6 +22,40 @@ jobs:
       - name: Sync verified Ar-Rafeeq 4 web source
         run: bash scripts/sync-rafeeq-web.sh
 
+      - name: Apply Houd branding to Android web shell
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("app/src/main/assets/web")
+          replacements = {
+              "index.html": [
+                  ("<title>الرفيق | Al-Rafeeq</title>", "<title>هود | Houd</title>"),
+                  ('content="الرفيق">', 'content="هود">'),
+              ],
+              "manifest.json": [
+                  ('"name": "الرفيق - رفيقك إلى الطمأنينة"', '"name": "هود"'),
+                  ('"short_name": "الرفيق"', '"short_name": "هود"'),
+                  ('"description": "تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة."', '"description": "هود - تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة."'),
+              ],
+              "config.js": [
+                  ('APP_NAME: "الرفيق"', 'APP_NAME: "هود"'),
+              ],
+              "app.js": [
+                  ('APP_NAME: "الرفيق"', 'APP_NAME: "هود"'),
+              ],
+          }
+          for name, pairs in replacements.items():
+              p = root / name
+              if not p.exists():
+                  raise SystemExit(f"Missing branding file: {p}")
+              s = p.read_text(encoding="utf-8")
+              for old, new in pairs:
+                  if old not in s:
+                      raise SystemExit(f"Branding target not found in {p}: {old}")
+                  s = s.replace(old, new)
+              p.write_text(s, encoding="utf-8")
+          PY
+
       - name: Patch Android offline recitation bridge
         run: python3 scripts/patch-android-recitation.py
 
