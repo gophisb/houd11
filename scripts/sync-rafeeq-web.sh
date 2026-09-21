@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REF="59eddc62f183e3aebefb6036095aa75b8c9b8873"
+REF="48e5658925650a94cd516078723cb6c2e6dd51ee"
 
 rm -rf app/src/main/assets/web
 mkdir -p app/src/main/assets
 
-# Stable offline content/data baseline.
-git clone --quiet https://github.com/gophisb/ar-rafeeq3.git /tmp/ar-rafeeq3
-cd /tmp/ar-rafeeq3
+# Ar-Rafeeq 4 is the source of truth for the Android web layer.
+git clone --quiet https://github.com/gophisb/ar-rafeeq4.git /tmp/ar-rafeeq4
+cd /tmp/ar-rafeeq4
 git checkout --quiet "$REF"
 rm -rf .git .github
 cd -
 
-cp -a /tmp/ar-rafeeq3 app/src/main/assets/web
+cp -a /tmp/ar-rafeeq4/. app/src/main/assets/web/
 
-# Rafeeq 4 application core overlay.
-# The Android shell remains in houd11; this overlay restores the Rafeeq 4
-# application layer without replacing the underlying local content baseline.
-cp -a vendor/rafeeq4-core/. app/src/main/assets/web/
+# Keep the native Android shell in houd11; the web application comes from
+# the verified Ar-Rafeeq 4 source above.
