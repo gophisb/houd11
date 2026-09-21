@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REF="48e5658925650a94cd516078723cb6c2e6dd51ee"
+REF="cf0ccc4a85cf30d23ca6469fa7308ee43f64f156"
 
 rm -rf app/src/main/assets/web
 mkdir -p app/src/main/assets
