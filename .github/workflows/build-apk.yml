@@ -26,34 +26,43 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import json
+
           root = Path("app/src/main/assets/web")
-          replacements = {
-              "index.html": [
-                  ("<title>الرفيق | Al-Rafeeq</title>", "<title>هود | Houd</title>"),
-                  ('content="الرفيق">', 'content="هود">'),
-              ],
-              "manifest.json": [
-                  ('"name": "الرفيق - رفيقك إلى الطمأنينة"', '"name": "هود"'),
-                  ('"short_name": "الرفيق"', '"short_name": "هود"'),
-                  ('"description": "تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة."', '"description": "هود - تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة."'),
-              ],
-              "config.js": [
-                  ('APP_NAME: "الرفيق"', 'APP_NAME: "هود"'),
-              ],
-              "app.js": [
-                  ('APP_NAME: "الرفيق"', 'APP_NAME: "هود"'),
-              ],
-          }
-          for name, pairs in replacements.items():
+
+          # index.html: change only the app-facing browser/PWA labels.
+          p = root / "index.html"
+          s = p.read_text(encoding="utf-8")
+          s = s.replace("<title>الرفيق | Al-Rafeeq</title>", "<title>هود | Houd</title>")
+          s = s.replace('content="الرفيق">', 'content="هود">')
+          p.write_text(s, encoding="utf-8")
+
+          # manifest.json: parse JSON so branding survives source wording changes.
+          p = root / "manifest.json"
+          manifest = json.loads(p.read_text(encoding="utf-8"))
+          manifest["name"] = "هود"
+          manifest["short_name"] = "هود"
+          manifest["description"] = "هود - تطبيق إسلامي متكامل للقرآن والذكر والصلاة والقبلة."
+          p.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          # JS configuration: replace the actual source value, without requiring
+          # unrelated comments or wording to match.
+          for name in ("config.js", "app.js"):
               p = root / name
-              if not p.exists():
-                  raise SystemExit(f"Missing branding file: {p}")
               s = p.read_text(encoding="utf-8")
-              for old, new in pairs:
-                  if old not in s:
-                      raise SystemExit(f"Branding target not found in {p}: {old}")
-                  s = s.replace(old, new)
+              s = s.replace('APP_NAME: "الرفيق"', 'APP_NAME: "هود"')
               p.write_text(s, encoding="utf-8")
+
+          # Hard verification: the generated Android web shell must actually say Houd.
+          checks = {
+              "index.html": "هود",
+              "manifest.json": '"name": "هود"',
+              "config.js": 'APP_NAME: "هود"',
+          }
+          for name, needle in checks.items():
+              s = (root / name).read_text(encoding="utf-8")
+              if needle not in s:
+                  raise SystemExit(f"Houd branding verification failed: {name}: {needle}")
           PY
 
       - name: Patch Android offline recitation bridge
