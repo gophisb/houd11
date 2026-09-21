@@ -5,12 +5,15 @@ import android.content.*;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetFileDescriptor;
 import android.media.*;
+import android.net.Uri;
+import android.util.Log;
 import android.os.*;
 import androidx.core.app.NotificationCompat;
 
 public class AdhanService extends Service {
     static final String ACTION_PLAY = "com.gophisb.houd11.PLAY_NOW";
-    static final String CHANNEL = "houd11_adhan_v3";
+    static final String CHANNEL = "houd11_adhan_v4";
+    static final String TAG = "Houd11Adhan";
     MediaPlayer player;
 
     @Override public void onCreate() {
@@ -20,7 +23,13 @@ public class AdhanService extends Service {
             NotificationChannel ch = new NotificationChannel(
                 CHANNEL, "الأذان", NotificationManager.IMPORTANCE_HIGH);
             ch.setDescription("تشغيل الأذان في وقت الصلاة");
-            ch.setSound(null, null);
+            Uri sound = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.adhan);
+            AudioAttributes notificationAudio = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+            ch.setSound(sound, notificationAudio);
+            ch.enableVibration(true);
             nm.createNotificationChannel(ch);
         }
     }
@@ -32,6 +41,7 @@ public class AdhanService extends Service {
             .setContentText("حان وقت الصلاة — الأذان")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSound(Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.adhan))
             .build();
 
         if (Build.VERSION.SDK_INT >= 29) {
@@ -49,8 +59,8 @@ public class AdhanService extends Service {
         try {
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build());
 
             AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.adhan);
@@ -63,9 +73,14 @@ public class AdhanService extends Service {
             }
 
             player.setVolume(1.0f, 1.0f);
-            player.setOnPreparedListener(mp -> mp.start());
+            player.setOnPreparedListener(mp -> {
+                Log.i(TAG, "Adhan audio prepared; duration=" + mp.getDuration());
+                mp.start();
+                Log.i(TAG, "Adhan audio started");
+            });
             player.setOnCompletionListener(mp -> finishPlayback());
             player.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "MediaPlayer error what=" + what + " extra=" + extra);
                 finishPlayback();
                 return true;
             });
