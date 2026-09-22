@@ -71,13 +71,38 @@ jobs:
       - name: Build lightweight release APK
         run: gradle :app:assembleRelease --no-daemon
 
-      - name: Verify lightweight APK
+      - name: Sign release APK and create final Houd APK
+        shell: bash
         run: |
-          find app/build/outputs -type f -name "*.apk" -print
-          test -n "$(find app/build/outputs -type f -name '*.apk' -print -quit)"
-          size=$(stat -c%s "$(find app/build/outputs -type f -name '*.apk' -print -quit)")
-          echo "APK_BYTES=$size"
+          set -euo pipefail
+          unsigned="app/build/outputs/apk/release/app-release-unsigned.apk"
+          test -f "$unsigned"
+
+          # This CI key is for a directly installable test/release artifact.
+          # A permanent distribution key can later be supplied through secrets
+          # without changing the Android project.
+          mkdir -p signing dist
+          keytool -genkeypair -v             -keystore signing/houd11-ci-release.jks             -storepass houd11-ci             -keypass houd11-ci             -alias houd11             -keyalg RSA             -keysize 2048             -validity 10000             -dname "CN=Houd11, OU=Houd11, O=Houd11, L=Algeria, C=DZ"
+
+          build_tools="$(dirname "$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)")"
+          "$build_tools/zipalign" -f 4 "$unsigned" dist/houd11-release-unsigned-aligned.apk
+          "$build_tools/apksigner" sign             --ks signing/houd11-ci-release.jks             --ks-key-alias houd11             --ks-pass pass:houd11-ci             --key-pass pass:houd11-ci             --out dist/houd11-release.apk             dist/houd11-release-unsigned-aligned.apk
+
+          "$build_tools/apksigner" verify --verbose --print-certs dist/houd11-release.apk
+          rm -f dist/houd11-release-unsigned-aligned.apk
+          rm -rf signing
+
+          size=$(stat -c%s dist/houd11-release.apk)
+          echo "SIGNED_APK_BYTES=$size"
           test "$size" -lt 120000000
+
+      - name: Verify final APK is signed and installable
+        run: |
+          set -euo pipefail
+          test -f dist/houd11-release.apk
+          test ! -f dist/houd11-release-unsigned-aligned.apk
+          build_tools="$(dirname "$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)")"
+          "$build_tools/apksigner" verify --verbose dist/houd11-release.apk
 
       - name: Build optional Quran audio pack
         run: |
@@ -88,7 +113,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: houd11-rafeeq4-lightweight-release-apk
-          path: app/build/outputs/**/*.apk
+          path: dist/houd11-release.apk
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
